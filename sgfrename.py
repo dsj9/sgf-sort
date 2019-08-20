@@ -1,14 +1,26 @@
-import sgfmill
+import argparse
 import glob
+import re
 import sys
+
+import sgfmill
 
 """
 -r
 -f format
 """
 
-for argument in sys.argv:
-    print(argument)
+recursive = False
+customFormat = False
 
-for file in glob.glob('*.sgf'):
+argument_parser = argparse.ArgumentParser()
+
+argument_parser.add_argument("-r", "--recursive", help="Recursive")
+argument_parser.add_argument("-f", "--format", help="Renaming format")
+
+arguments = argument_parser.parse_args()
+
+print(arguments)
+
+for file in glob.glob('*.sgf', recursive=recursive):
     print(file)
