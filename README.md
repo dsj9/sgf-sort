@@ -1,1 +1,1 @@
-# sgf-sort
+# sgfrename
