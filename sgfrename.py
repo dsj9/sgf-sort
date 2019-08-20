@@ -2,25 +2,17 @@ import argparse
 import glob
 import re
 import sys
+from string import Template
 
 import sgfmill
 
-"""
--r
--f format
-"""
-
-recursive = False
-customFormat = False
-
 argument_parser = argparse.ArgumentParser()
-
-argument_parser.add_argument("-r", "--recursive", help="Recursive")
+argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
 argument_parser.add_argument("-f", "--format", help="Renaming format")
 
-arguments = argument_parser.parse_args()
+options = vars(argument_parser.parse_args())
 
-print(arguments)
+template = Template(options.format)
 
-for file in glob.glob('*.sgf', recursive=recursive):
+for file in glob.glob('*.sgf', recursive=options['recursive']):
     print(file)
