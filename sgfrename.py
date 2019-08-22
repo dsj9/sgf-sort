@@ -4,7 +4,7 @@ import re
 import sys
 from string import Template
 
-default_name_format = '$date - $server - $blackname [$blackrank] - $whitename [$whiterank]'
+default_name_format = '$date - $location - $blackname [$blackrank] - $whitename [$whiterank] - $result'
 
 servers = {
     'OGS': {
@@ -121,11 +121,11 @@ def parse_date(date):
 
 argument_parser = argparse.ArgumentParser()
 argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
-argument_parser.add_argument("-f", "--format", help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
+argument_parser.add_argument("-f", "--format", default=default_name_format, help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
 
 options = vars(argument_parser.parse_args())
 
-#template = Template(options.format)
+template = Template(options['format'])
 
 for file in glob.glob('*.sgf', recursive=options['recursive']):
     with open(file, 'r', encoding='utf-8') as f:
@@ -136,20 +136,22 @@ for file in glob.glob('*.sgf', recursive=options['recursive']):
             print('Could not read ' , file)
             continue
     
-    date = parse_date(list_get(find_key(data, 'DT'), 0, 'unknown-date'))
+    game_info = {}
 
-    black_name = list_get(find_key(data, 'PB'), 0, 'unknown-player')
-    white_name = list_get(find_key(data, 'PW'), 0, 'unknown-player')
+    game_info['date'] = parse_date(list_get(find_key(data, 'DT'), 0, 'unknown-date'))
 
-    black_rank_unprocessed = list_get(find_key(data, 'BR'), 0, 'unknown-rank')
-    black_rank = translate(black_rank_unprocessed, translations['ranks'])
+    game_info['blackname'] = list_get(find_key(data, 'PB'), 0, 'unknown-player')
+    game_info['whitename'] = list_get(find_key(data, 'PW'), 0, 'unknown-player')
 
-    white_rank_unprocessed = list_get(find_key(data, 'WR'), 0, 'unknown-rank')
-    white_rank = translate(white_rank_unprocessed, translations['ranks'])
+    blackrank_unprocessed = list_get(find_key(data, 'BR'), 0, 'unknown-rank')
+    game_info['blackrank'] = translate(blackrank_unprocessed, translations['ranks'])
 
-    location = find_location(data)
+    whiterank_unprocessed = list_get(find_key(data, 'WR'), 0, 'unknown-rank')
+    game_info['whiterank'] = translate(whiterank_unprocessed, translations['ranks'])
+
+    game_info['location'] = find_location(data)
 
     result_unprocessed = list_get(find_key(data, 'RE'), 0, 'unknown-result') 
-    result = translate(result_unprocessed, translations['results'])
+    game_info['result'] = translate(result_unprocessed, translations['results'])
 
-    print(black_name , black_rank , white_name , white_rank , date , location , result)
+    print(template.substitute(game_info))
