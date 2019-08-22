@@ -79,7 +79,6 @@ translations = {
     }
 }
 
-
 def translate(value, dictionary):
     for foreign, translation in dictionary.items():
         match = re.search(foreign, value, re.IGNORECASE)
@@ -119,23 +118,7 @@ def parse_date(date):
         return match.expand(template)
     return date
 
-argument_parser = argparse.ArgumentParser()
-argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
-argument_parser.add_argument("-f", "--format", default=default_name_format, help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
-
-options = vars(argument_parser.parse_args())
-
-template = Template(options['format'])
-
-for file in glob.glob('*.sgf', recursive=options['recursive']):
-    with open(file, 'r', encoding='utf-8') as f:
-        print(file , ': ')
-        try:
-            data = f.read()
-        except:
-            print('Could not read ' , file)
-            continue
-    
+def get_game_info(data):
     game_info = {}
 
     game_info['date'] = parse_date(list_get(find_prop(data, 'DT'), 0, 'unknown-date'))
@@ -153,5 +136,26 @@ for file in glob.glob('*.sgf', recursive=options['recursive']):
 
     result_unprocessed = list_get(find_prop(data, 'RE'), 0, 'unknown-result') 
     game_info['result'] = translate(result_unprocessed, translations['results'])
+
+    return game_info
+
+argument_parser = argparse.ArgumentParser()
+argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
+argument_parser.add_argument("-f", "--format", default=default_name_format, help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
+
+options = vars(argument_parser.parse_args())
+
+template = Template(options['format'])
+
+for file in glob.glob('*.sgf', recursive=options['recursive']):
+    with open(file, 'r', encoding='utf-8') as f:
+        print(file , ': ')
+        try:
+            data = f.read()
+        except:
+            print('Could not read ' , file)
+            continue
+
+    game_info = get_game_info(data)
 
     print(template.substitute(game_info))
