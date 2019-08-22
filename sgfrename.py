@@ -4,44 +4,44 @@ import re
 import sys
 from string import Template
 
-default_format = '$date - $server - $black - $white'
+default_name_format = '$date - $server - $blackname [$blackrank] - $whitename [$whiterank]'
 
-server_identifiers = {
+servers = {
     'OGS': {
         'tag': 'PC',
-        'value': 'OGS:'
+        'identifier': 'OGS:'
     },
     'KGS': {
         'tag': 'PC',
-        'value': 'The KGS Go Server'
+        'identifier': 'The KGS Go Server'
     },
     'Tygem': {
         'tag': 'PC',
-        'value': 'Tygem'
+        'identifier': 'Tygem'
     },
     'WBaduk': {
         'tag': 'PC',
-        'value': 'wbaduk'
+        'identifier': 'wbaduk'
     },
     'CyberOro': {
         'tag': 'US',
-        'value': 'www.cyberoro.com'
+        'identifier': 'www.cyberoro.com'
     },
     'IGS': {
         'tag': 'PC',
-        'value': 'IGS:'
+        'identifier': 'IGS:'
     },
     'Fox': {
         'tag': 'AP',
-        'value': 'foxwq'
+        'identifier': 'foxwq',
     },
     'DGS': {
         'tag': 'PC',
-        'value': 'Dragon Go Server' 
+        'identifier': 'Dragon Go Server'
     },
     'GoShrine': {
         'tag': 'PC',
-        'value': 'GoShrine'
+        'identifier': 'GoShrine'
     },
     'INGO': {
         'tag': 'PC',
@@ -49,32 +49,69 @@ server_identifiers = {
     },
     'LankeWeiqi': {
         'tag': 'PC',
-        'value': '烂柯围棋网'
+        'identifier': '烂柯围棋网',
     }
 }
 
-def find_key(data, key):
-    reg = r'{0}\[([^]]+)\]'.format(key)
-    matches = re.findall(reg, data)
-    if matches:
-        return matches
-    return None
+translations = {
+    'ranks': {
+        r'(\d+)段': r'\1d',
+        r'(\d+)级': r'\1k',
+        r'P(\d)d': r'\1p'
+    },
+    'results': {
+        '没有结果': '?',
+        '黑中盘胜。': 'B+Resign',
+        '白中盘胜。': 'W+Resign',
+        '白方强退告负。': 'B+Forfeit',
+        '黑方强退告负。': 'W+Forfeit',
+        r'黑胜(\d+(\.5)?)目': r'B+\1',
+        r'白胜(\d+(\.5)?)目': r'W+\1',
+        '白方超时负': 'B+Time',
+        '黑方超时负': 'W+Time',
+        '和棋。': 'Draw',
+        r'^([BW])\+T$': r'\1+Time',
+        r'^([BW])\+F(orf)?$': r'\1+Forfeit',
+        r'^([BW])\+R(es)?$': r'\1+Resign',
+        r'[WB][a-z]+ w[oi]ns? by resign': r'W+Resign'
+    }
+}
 
-def find_server(data):
-    for server in server_identifiers:
+
+def translate(value, dictionary):
+    for foreign, translation in dictionary.items():
+        match = re.search(foreign, value, re.IGNORECASE)
+        if match:
+            return match.expand(translation)
+    return value
+
+def find_key(data, key):
+    reg = r'{0}\[([^]\\]*(?:\\.[^]\\]*)*)\]'.format(key)
+    matches = re.findall(reg, data)
+    return matches
+
+def find_location(data):
+    for server, info in servers.items():
         try:
-            info = find_key(data, server_identifiers[server]['tag'])
-            if info:
-                for value in info:
-                    if value.startswith(server_identifiers[server]['value']):
-                        return server
+            keys = find_key(data, info['tag'])
+            for value in keys:
+                if value.startswith(info['identifier']):
+                    return server
+            if keys:
+                return keys[0]
         except:
             continue
     return None
 
+def list_get(list, index, default):
+  try:
+    return list[index]
+  except IndexError:
+    return default
+
 argument_parser = argparse.ArgumentParser()
 argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
-argument_parser.add_argument("-f", "--format", help="Renaming format")
+argument_parser.add_argument("-f", "--format", help="Renaming format string. Variables: $date, $location, $result, $winner, $blackname, $whitename, $blackrank, $whiterank")
 
 options = vars(argument_parser.parse_args())
 
@@ -88,7 +125,21 @@ for file in glob.glob('*.sgf', recursive=options['recursive']):
         except:
             print('Could not read ' , file)
             continue
-    black_player = find_key(data, "PB")
-    white_player = find_key(data, "PW")
-
     
+    date = list_get(find_key(data, 'DT'), 0, 'unknown-date')
+
+    black_name = list_get(find_key(data, 'PB'), 0, 'unknown-player')
+    white_name = list_get(find_key(data, 'PW'), 0, 'unknown-player')
+
+    black_rank_unprocessed = list_get(find_key(data, 'BR'), 0, 'unknown-rank')
+    black_rank = translate(black_rank_unprocessed, translations['ranks'])
+
+    white_rank_unprocessed = list_get(find_key(data, 'WR'), 0, 'unknown-rank')
+    white_rank = translate(white_rank_unprocessed, translations['ranks'])
+
+    location = find_location(data)
+
+    result_unprocessed = list_get(find_key(data, 'RE'), 0, 'unknown-result') 
+    result = translate(result_unprocessed, translations['results'])
+
+    print(black_name , black_rank , white_name , white_rank , date , location , result)
