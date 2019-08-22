@@ -57,10 +57,11 @@ translations = {
     'ranks': {
         r'(\d+)段': r'\1d',
         r'(\d+)级': r'\1k',
-        r'P(\d)d': r'\1p'
+        r'[dp](\d)[pd]': r'\1p',
+        r'^\?$': 'unknown-rank'
     },
     'results': {
-        '没有结果': '?',
+        '没有结果': 'Unknown',
         '黑中盘胜。': 'B+Resign',
         '白中盘胜。': 'W+Resign',
         '白方强退告负。': 'B+Forfeit',
@@ -71,9 +72,10 @@ translations = {
         '黑方超时负': 'W+Time',
         '和棋。': 'Draw',
         r'^([BW])\+T$': r'\1+Time',
-        r'^([BW])\+F(orf)?$': r'\1+Forfeit',
-        r'^([BW])\+R(es)?$': r'\1+Resign',
-        r'[WB][a-z]+ w[oi]ns? by resign': r'W+Resign'
+        r'^([BW])\+F$': r'\1+Forfeit',
+        r'^([BW])\+R$': r'\1+Resign',
+        r'[WB][a-z]+ (\d+[\.5]*)': r'W+\1',
+        r'[WB][a-z]+ w[oi]ns? by res': r'W+Resign'
     }
 }
 
@@ -97,8 +99,6 @@ def find_location(data):
             for value in keys:
                 if value.startswith(info['identifier']):
                     return server
-            if keys:
-                return keys[0]
         except:
             continue
     return None
@@ -111,7 +111,7 @@ def list_get(list, index, default):
 
 argument_parser = argparse.ArgumentParser()
 argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
-argument_parser.add_argument("-f", "--format", help="Renaming format string. Variables: $date, $location, $result, $winner, $blackname, $whitename, $blackrank, $whiterank")
+argument_parser.add_argument("-f", "--format", help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
 
 options = vars(argument_parser.parse_args())
 
