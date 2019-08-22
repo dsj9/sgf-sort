@@ -110,7 +110,7 @@ def list_get(list, index, default):
     return default
 
 def parse_date(date):
-    date_reg = r'(\d{4})[^0-9]*(\d\d|\d)[^0-9]*(\d{1,2})[^0-9]*((\d{1,2})[^0-9]+(\d\d)[\-\: ]*(\d\d)?)?'
+    date_reg = r'(\d{4})[\D]*(\d\d|\d)[\D]*(\d{1,2})[\D]*((\d{1,2})[\D]+(\d\d)[\-\: ]*(\d\d)?)?'
     match = re.search(date_reg, date)
     if match:
         template = r'\1-\2-\3 \5-\6'
