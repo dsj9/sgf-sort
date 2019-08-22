@@ -109,6 +109,16 @@ def list_get(list, index, default):
   except IndexError:
     return default
 
+def parse_date(date):
+    date_reg = r'(\d{4})[^0-9]*(\d\d|\d)[^0-9]*(\d{1,2})[^0-9]*((\d{1,2})[^0-9]+(\d\d)[\-\: ]*(\d\d)?)?'
+    match = re.search(date_reg, date)
+    if match:
+        template = r'\1-\2-\3 \5-\6'
+        if not match.group(4):
+            template = r'\1-\2-\3'
+        return match.expand(template)
+    return date
+
 argument_parser = argparse.ArgumentParser()
 argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
 argument_parser.add_argument("-f", "--format", help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
@@ -126,7 +136,7 @@ for file in glob.glob('*.sgf', recursive=options['recursive']):
             print('Could not read ' , file)
             continue
     
-    date = list_get(find_key(data, 'DT'), 0, 'unknown-date')
+    date = parse_date(list_get(find_key(data, 'DT'), 0, 'unknown-date'))
 
     black_name = list_get(find_key(data, 'PB'), 0, 'unknown-player')
     white_name = list_get(find_key(data, 'PW'), 0, 'unknown-player')
