@@ -87,16 +87,16 @@ def translate(value, dictionary):
             return match.expand(translation)
     return value
 
-def find_key(data, key):
-    reg = r'{0}\[([^]\\]*(?:\\.[^]\\]*)*)\]'.format(key)
+def find_prop(data, prop):
+    reg = r'{0}\[([^]\\]*(?:\\.[^]\\]*)*)\]'.format(prop)
     matches = re.findall(reg, data)
     return matches
 
 def find_location(data):
     for server, info in servers.items():
         try:
-            keys = find_key(data, info['tag'])
-            for value in keys:
+            props = find_prop(data, info['tag'])
+            for value in props:
                 if value.startswith(info['identifier']):
                     return server
         except:
@@ -138,20 +138,20 @@ for file in glob.glob('*.sgf', recursive=options['recursive']):
     
     game_info = {}
 
-    game_info['date'] = parse_date(list_get(find_key(data, 'DT'), 0, 'unknown-date'))
+    game_info['date'] = parse_date(list_get(find_prop(data, 'DT'), 0, 'unknown-date'))
 
-    game_info['blackname'] = list_get(find_key(data, 'PB'), 0, 'unknown-player')
-    game_info['whitename'] = list_get(find_key(data, 'PW'), 0, 'unknown-player')
+    game_info['blackname'] = list_get(find_prop(data, 'PB'), 0, 'unknown-player')
+    game_info['whitename'] = list_get(find_prop(data, 'PW'), 0, 'unknown-player')
 
-    blackrank_unprocessed = list_get(find_key(data, 'BR'), 0, 'unknown-rank')
+    blackrank_unprocessed = list_get(find_prop(data, 'BR'), 0, 'unknown-rank')
     game_info['blackrank'] = translate(blackrank_unprocessed, translations['ranks'])
 
-    whiterank_unprocessed = list_get(find_key(data, 'WR'), 0, 'unknown-rank')
+    whiterank_unprocessed = list_get(find_prop(data, 'WR'), 0, 'unknown-rank')
     game_info['whiterank'] = translate(whiterank_unprocessed, translations['ranks'])
 
     game_info['location'] = find_location(data)
 
-    result_unprocessed = list_get(find_key(data, 'RE'), 0, 'unknown-result') 
+    result_unprocessed = list_get(find_prop(data, 'RE'), 0, 'unknown-result') 
     game_info['result'] = translate(result_unprocessed, translations['results'])
 
     print(template.substitute(game_info))
