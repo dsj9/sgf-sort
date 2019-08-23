@@ -2,6 +2,7 @@ import argparse
 import glob
 import re
 import sys
+from datetime import datetime
 from string import Template
 
 default_name_format = '$date - $location - $blackname [$blackrank] - $whitename [$whiterank] - $result'
@@ -45,7 +46,7 @@ servers = {
     },
     'INGO': {
         'tag': 'PC',
-        'value': 'Played on INGO'
+        'identifier': 'Played on INGO'
     },
     'LankeWeiqi': {
         'tag': 'PC',
@@ -93,13 +94,10 @@ def find_prop(data, prop):
 
 def find_location(data):
     for server, info in servers.items():
-        try:
-            props = find_prop(data, info['tag'])
-            for value in props:
-                if value.startswith(info['identifier']):
-                    return server
-        except:
-            continue
+        props = find_prop(data, info['tag'])
+        for value in props:
+            if value.startswith(info['identifier']):
+                return server
     return None
 
 def list_get(list, index, default):
@@ -113,9 +111,13 @@ def parse_date(date):
     match = re.search(date_reg, date)
     if match:
         template = r'\1-\2-\3 \5-\6'
+        datetime_format = '%Y-%m-%d %H-%M'
         if not match.group(4):
             template = r'\1-\2-\3'
-        return match.expand(template)
+            datetime_format = '%Y-%m-%d'
+        datetime_object = datetime.strptime(match.expand(template), datetime_format)
+        return datetime_object.strftime(datetime_format)
+
     return date
 
 def get_game_info(data):
