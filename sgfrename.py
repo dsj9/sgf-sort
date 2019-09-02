@@ -1,8 +1,9 @@
 import argparse
+from datetime import datetime
 import glob
+import os
 import re
 import sys
-from datetime import datetime
 from string import Template
 
 default_name_format = '$date - $location - $blackname [$blackrank] - $whitename [$whiterank] - $result'
@@ -110,8 +111,8 @@ def parse_date(date):
     date_reg = r'(\d{4})[\D]*(\d\d|\d)[\D]*(\d{1,2})[\D]*((\d{1,2})[\D]+(\d\d)[\-\: ]*(\d\d)?)?'
     match = re.search(date_reg, date)
     if match:
-        template = r'\1-\2-\3 \5-\6'
-        datetime_format = '%Y-%m-%d %H-%M'
+        template = r'\1-\2-\3 \5.\6'
+        datetime_format = '%Y-%m-%d %H.%M'
         if not match.group(4):
             template = r'\1-\2-\3'
             datetime_format = '%Y-%m-%d'
@@ -125,8 +126,8 @@ def get_game_info(data):
 
     game_info['date'] = parse_date(list_get(find_prop(data, 'DT'), 0, 'unknown-date'))
 
-    game_info['blackname'] = list_get(find_prop(data, 'PB'), 0, 'unknown-player')
-    game_info['whitename'] = list_get(find_prop(data, 'PW'), 0, 'unknown-player')
+    game_info['blackname'] = list_get(find_prop(data, 'PB'), 0, 'unknown-player').strip()
+    game_info['whitename'] = list_get(find_prop(data, 'PW'), 0, 'unknown-player').strip()
 
     blackrank_unprocessed = list_get(find_prop(data, 'BR'), 0, 'unknown-rank')
     game_info['blackrank'] = translate(blackrank_unprocessed, translations['ranks'])
@@ -161,6 +162,13 @@ if __name__ == "__main__":
 
         game_info = get_game_info(data)
 
-        print(template.substitute(game_info))
+        new_filename = re.sub(r'[\/\\;,><&\*:%=@!#\^\(\)\|\?]', '', template.substitute(game_info))
+        new_filename += '{}.sgf'
 
-
+        counter = ''
+        if os.path.isfile(new_filename):
+            counter = 1
+            while os.path.isfile(new_filename.format(counter)):
+                counter += 1
+        os.rename(file, new_filename.format(counter))
+    
