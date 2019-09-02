@@ -142,7 +142,7 @@ def get_game_info(data):
 
     return game_info
 
-if __name__ == "__main__":
+def main():
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("-r", "--recursive", action='store_true', help="Search folders recursively")
     argument_parser.add_argument("-f", "--format", default=default_name_format, help="Renaming format string. Variables: $date, $location, $result, $blackname, $whitename, $blackrank, $whiterank")
@@ -171,4 +171,6 @@ if __name__ == "__main__":
             while os.path.isfile(new_filename.format(counter)):
                 counter += 1
         os.rename(file, new_filename.format(counter))
-    
+
+if __name__ == "__main__":
+    main()
